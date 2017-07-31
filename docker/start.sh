@@ -18,7 +18,8 @@ attackstream-indexer \
   ${KAFKA_POLL_TIMEOUT_MS+            --kafka-poll-timeout-ms             "${KAFKA_POLL_TIMEOUT_MS}"            } \
   ${KAFKA_QUEUED_MAX_MESSAGES_KBYTES+ --kafka-queued-max-messages-kbytes  "${KAFKA_QUEUED_MAX_MESSAGES_KBYTES}" } \
   ${KAFKA_CONSUMER_COMMIT_PERIOD_SEC+ --kafka-consumer-commit-period-sec  "${KAFKA_CONSUMER_COMMIT_PERIOD_SEC}" } \
-  ${COMMANDS_TOPIC_IN+                --commands-topic                    "${COMMANDS_TOPIC_IN}"                } \
+  ${INPUT_TOPIC_IN+                   --input-topic                       "${INPUT_TOPIC_IN}"                   } \
+  ${XML_INDEX_BUCKET_OUT+             --xml-index-bucket                  "${XML_INDEX_BUCKET_OUT}"             } \
   ${STATSD_HOST+                      --statsd-host                       "${STATSD_HOST}"                      } \
   ${STATSD_SAMPLE_RATE+               --statsd-sample-rate                "${STATSD_SAMPLE_RATE}"               } \
   ${STATSD_TAGS+                      --statsd-tags                       "${STATSD_TAGS}"                      } \
