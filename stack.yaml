@@ -16,7 +16,7 @@ packages:
   extra-dep: true
 - location:
     git: git@github.com:haskell-works/hw-xml.git
-    commit: 56eea4d6687a34e3beddf5bcb3c8c8c1456889c3
+    commit: 0e0f72e9416535a94e0dc5e08936e75242783f6c
   extra-dep: true
 - location:
     git: git@github.com:haskell-works/hw-hedgehog.git
@@ -38,7 +38,7 @@ extra-deps:
   - hw-kafka-conduit-1.1.4
   - hw-parser-0.0.0.2
   - hw-prim-0.4.0.3
-  - hw-rankselect-0.8.0.1
+  - hw-rankselect-0.8.0.2
   - hw-rankselect-base-0.2.0.0
   - pure-zlib-0.6
 

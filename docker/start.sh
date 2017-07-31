@@ -10,7 +10,7 @@ export STATSD_HOST=${STATSD_HOST:-$GATEWAY_IP}
 /usr/local/bin/set-environment
 
 set -x
-attackstream-indexer \
+attackstream-indexer service \
   ${AWS_REGION+                       --region                            "${AWS_REGION}"                       } \
   ${KAFKA_BROKER+                     --kafka-broker                      "${KAFKA_BROKER}"                     } \
   ${KAFKA_GROUP_ID+                   --kafka-group-id                    "${KAFKA_GROUP_ID}"                   } \

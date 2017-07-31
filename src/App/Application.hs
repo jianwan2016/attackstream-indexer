@@ -71,7 +71,7 @@ deriving instance MonadApp Application
 instance MonadStats Application where
   getStatsClient = reader _appStatsClient
 
-runApplication :: HasEnv e => AppName -> e -> Options -> Application () -> IO AppState
+runApplication :: HasEnv e => AppName -> e -> ServiceOptions -> Application () -> IO AppState
 runApplication appName e opt val =
   runResourceT . runAWS e . runLogT' (opt ^. optLogLevel) . flip execStateT appStateEmpty $ do
     logInfo $ show opt
@@ -83,7 +83,7 @@ runApplication appName e opt val =
 
     runReaderT (unApp val) (AppOptions opt stats)
 
-statsTags :: MonadIO m => Options -> m [Tag]
+statsTags :: MonadIO m => ServiceOptions -> m [Tag]
 statsTags opts = liftIO $ do
   deplId <- envTag "TASK_DEPLOY_ID" "deploy_id"
   let envTags = catMaybes [deplId]

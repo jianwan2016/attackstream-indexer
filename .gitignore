@@ -74,3 +74,11 @@ __pycache*
 
 # transient librdkafka
 .librdkafka
+
+/*.xml
+/*.ib
+/*.bp
+/*.idx
+/*.gz
+/*.blank
+

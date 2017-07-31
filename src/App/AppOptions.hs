@@ -7,7 +7,7 @@ import Control.Lens
 import Network.StatsD (StatsClient)
 
 data AppOptions = AppOptions
-  { _appOpts        :: Options
+  { _appOpts        :: ServiceOptions
   , _appStatsClient :: StatsClient
   }
 
