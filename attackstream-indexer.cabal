@@ -19,36 +19,55 @@ executable attackstream-indexer
   other-modules:        Service
   default-language:     Haskell2010
   build-depends:        base >= 4.7 && < 5
-                      , attackstream-indexer
                       , amazonka
                       , amazonka-core
                       , amazonka-s3
+                      , attackstream-indexer
                       , avro
+                      , base64-bytestring
                       , bifunctors
+                      , binary
                       , bytestring
+                      , bytestring-conversion
                       , conduit
                       , containers
                       , datadog
                       , directory
-                      , etc
                       , exceptions
+                      , extra
                       , fast-logger
+                      , hedgehog
                       , hs-arbor-logger
+                      , hspec
+                      , hw-balancedparens
+                      , hw-bits
+                      , hw-conduit
                       , hw-conduit
                       , hw-kafka-avro
+                      , hw-kafka-avro
+                      , hw-kafka-client
                       , hw-kafka-client
                       , hw-kafka-conduit
+                      , hw-kafka-conduit
+                      , hw-prim
+                      , hw-rankselect
+                      , hw-rankselect-base
+                      , hw-xml
                       , lens
                       , monad-control
                       , monad-logger
                       , mtl
                       , network
-                      , random
                       , optparse-applicative
+                      , random
                       , resourcet
                       , text
+                      , time
                       , transformers
                       , transformers-base
+                      , vector
+                      , xml
+                      , zlib
   ghc-options:       -threaded -rtsopts -O2
   default-extensions: OverloadedStrings, TupleSections
   if os(darwin)
@@ -65,6 +84,7 @@ library
                       , App.Kafka
                       , App.Options
                       , App.Orphans
+                      , App.IndexFile
   default-language:     Haskell2010
   ghc-options:          -Wall
   build-depends:        base >= 4.7 && < 5
@@ -72,20 +92,36 @@ library
                       , amazonka-core
                       , amazonka-s3
                       , avro
+                      , base64-bytestring
                       , bifunctors
+                      , binary
                       , bytestring
+                      , bytestring-conversion
                       , conduit
                       , conduit-extra
                       , containers
                       , datadog
                       , directory
                       , exceptions
+                      , extra
                       , fast-logger
+                      , hedgehog
                       , hs-arbor-logger
+                      , hspec
+                      , hw-balancedparens
+                      , hw-bits
+                      , hw-conduit
                       , hw-conduit
                       , hw-kafka-avro
+                      , hw-kafka-avro
+                      , hw-kafka-client
                       , hw-kafka-client
                       , hw-kafka-conduit
+                      , hw-kafka-conduit
+                      , hw-prim
+                      , hw-rankselect
+                      , hw-rankselect-base
+                      , hw-xml
                       , lens
                       , monad-control
                       , monad-logger
@@ -95,8 +131,12 @@ library
                       , random
                       , resourcet
                       , text
+                      , time
                       , transformers
                       , transformers-base
+                      , vector
+                      , xml
+                      , zlib
   default-extensions: OverloadedStrings, TupleSections
   if os(darwin)
     cpp-options: -D__attribute__(A)= -D_Nullable= -D_Nonnull=
@@ -109,26 +149,40 @@ test-suite tests
   main-is:              Spec.hs
   ghc-options:          -Wall -threaded
   build-depends:        base >= 4.7 && < 5
-                      , attackstream-indexer
-                      , hspec
-                      , hedgehog
                       , amazonka
                       , amazonka-core
                       , amazonka-s3
+                      , attackstream-indexer
                       , avro
+                      , base64-bytestring
                       , bifunctors
+                      , binary
                       , bytestring
+                      , bytestring-conversion
                       , conduit
                       , containers
                       , datadog
                       , directory
                       , exceptions
+                      , extra
                       , fast-logger
+                      , hedgehog
                       , hs-arbor-logger
+                      , hspec
+                      , hw-balancedparens
+                      , hw-bits
+                      , hw-conduit
                       , hw-conduit
                       , hw-kafka-avro
+                      , hw-kafka-avro
+                      , hw-kafka-client
                       , hw-kafka-client
                       , hw-kafka-conduit
+                      , hw-kafka-conduit
+                      , hw-prim
+                      , hw-rankselect
+                      , hw-rankselect-base
+                      , hw-xml
                       , lens
                       , monad-control
                       , monad-logger
@@ -137,8 +191,12 @@ test-suite tests
                       , random
                       , resourcet
                       , text
+                      , time
                       , transformers
                       , transformers-base
+                      , vector
+                      , xml
+                      , zlib
   default-extensions: OverloadedStrings, TupleSections
   if os(darwin)
     cpp-options: -D__attribute__(A)= -D_Nullable= -D_Nonnull=
