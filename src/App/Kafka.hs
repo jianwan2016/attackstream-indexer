@@ -12,7 +12,7 @@ import Data.Monoid                  ((<>))
 import Kafka.Conduit
 
 
-mkConsumer :: MonadResource m => Options -> m KafkaConsumer
+mkConsumer :: MonadResource m => ServiceOptions -> m KafkaConsumer
 mkConsumer opts =
   let props = consumerBrokersList [opts ^. optKafkaBroker]
               <> groupId (opts ^. optKafkaGroupId)
@@ -23,7 +23,7 @@ mkConsumer opts =
       cons = newConsumer props sub >>= either throwM return
    in snd <$> allocate cons (void . closeConsumer)
 
-mkProducer :: MonadResource m => Options -> m KafkaProducer
+mkProducer :: MonadResource m => ServiceOptions -> m KafkaProducer
 mkProducer opts =
   let props = producerBrokersList [opts ^. optKafkaBroker]
               <> producerSuppressDisconnectLogs

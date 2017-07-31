@@ -1,9 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module App.Options where
 
 import Control.Lens
 import Control.Monad.Logger  (LogLevel (..))
 import Data.Semigroup        ((<>))
+import Data.Text             (Text)
 import Network.AWS.Data.Text (FromText (..), fromText)
 import Network.AWS.S3.Types  (BucketName (..), Region (..))
 import Network.Socket        (HostName)
@@ -14,13 +16,28 @@ import Text.Read             (readEither)
 import Kafka.Consumer.Types
 import Kafka.Types
 
-import           Data.Text   (Text)
 import qualified Data.Text   as T
 import qualified Network.AWS as AWS
 
 newtype StatsTag = StatsTag (Text, Text) deriving (Show, Eq)
 
-data Options = Options
+data IndexMethod
+  = IndexInMemory
+  | IndexBlank
+  | IndexBp
+  deriving (Eq, Show, Read)
+
+data IndexOptions = IndexOptions
+  { _optFilename    :: FilePath
+  , _optIndexMethod :: IndexMethod
+  } deriving (Eq, Show)
+
+data Cmd
+  = CmdService  ServiceOptions
+  | CmdIndex    IndexOptions
+  deriving (Eq, Show)
+
+data ServiceOptions = ServiceOptions
   { _optLogLevel                     :: LogLevel
   , _optRegion                       :: Region
   , _optKafkaBroker                  :: BrokerAddress
@@ -35,12 +52,27 @@ data Options = Options
   , _optStatsdTags                   :: [StatsTag]
   , _optSampleRate                   :: SampleRate
   , _optXmlIndexBucket               :: BucketName
-  } deriving (Show)
+  } deriving (Eq, Show)
 
-makeLenses ''Options
+makeLenses ''ServiceOptions
 
-options :: Parser Options
-options = Options
+makeLenses ''IndexOptions
+
+indexOptions :: Parser IndexOptions
+indexOptions = IndexOptions
+  <$> strOption
+      (  long "filename"
+      <> short 'f'
+      <> metavar "FILENAME"
+      <> help "File to index")
+  <*> readOptionMsg "Valid values are IndexInMemory, IndexBlank, IndexBp"
+      (  long "index-method"
+      <> short 'm'
+      <> metavar "INDEX_METHOD"
+      <> help "Index method: IndexInMemory, IndexBlank, IndexBp")
+
+serviceOptions :: Parser ServiceOptions
+serviceOptions = ServiceOptions
   <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
         (  long "log-level"
         <> short 'l'
@@ -125,7 +157,7 @@ options = Options
         <> metavar "XML_INDEX_BUCKET_NAME"
         <> help "XML index bucket name")
 
-awsLogLevel :: Options -> AWS.LogLevel
+awsLogLevel :: ServiceOptions -> AWS.LogLevel
 awsLogLevel o = case o ^. optLogLevel of
   LevelError -> AWS.Error
   LevelWarn  -> AWS.Error
@@ -150,12 +182,28 @@ string2Tags s = StatsTag . splitTag <$> splitTags
     splitTags = T.split (==',') (T.pack s)
     splitTag t = T.drop 1 <$> T.break (==':') t
 
-optionsParser :: ParserInfo Options
-optionsParser = info (helper <*> options)
+serviceOptionsParser :: ParserInfo ServiceOptions
+serviceOptionsParser = info (helper <*> serviceOptions)
   (  fullDesc
-  <> progDesc "For each attack caclulates its spuriousity index [0..1]"
-  <> header "Spurious Attacks Detector"
+  <> progDesc "Service for indexing XML"
+  <> header "Service for indexing XML"
   )
 
-parseOptions :: IO Options
-parseOptions = execParser optionsParser
+indexOptionsParser :: ParserInfo IndexOptions
+indexOptionsParser = info (helper <*> indexOptions)
+  (  fullDesc
+  <> progDesc "Index a local XML file"
+  <> header "Index an local XML file"
+  )
+
+optionsParser :: Parser Cmd
+optionsParser = subparser
+  (  command "service"  (CmdService <$> serviceOptionsParser)
+  <> command "index"    (CmdIndex   <$> indexOptionsParser))
+
+parseOptions :: IO Cmd
+parseOptions = execParser $ info (helper <*> optionsParser)
+  (  fullDesc
+  <> progDesc "Service for indexing XML"
+  <> header "Service for indexing XML"
+  )

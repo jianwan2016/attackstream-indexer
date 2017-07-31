@@ -1,7 +1,12 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+
 module Main where
 
+import App
+import App.Index
+import App.Kafka
+import App.Submissions
 import Arbor.Logger
 import Control.Concurrent                   hiding (yield)
 import Control.Lens
@@ -14,13 +19,8 @@ import Data.Conduit
 import HaskellWorks.Data.Conduit.Combinator
 import Kafka.Avro                           (schemaRegistry)
 import Kafka.Conduit.Sink
-import Kafka.Conduit.Source
 import System.Environment
 import System.IO                            (stdout)
-
-import App
-import App.Kafka
-import App.Submissions
 
 import qualified Data.Conduit.List as L
 import qualified Data.Map          as M
@@ -29,8 +29,15 @@ import qualified Service           as Srv
 
 main :: IO ()
 main = do
-  submissionReady <- newEmptyMVar
   opt <- parseOptions
+
+  case opt of
+    CmdService opt' -> serviceMain  opt'
+    CmdIndex   opt' -> indexMain    opt'
+
+serviceMain :: ServiceOptions -> IO ()
+serviceMain opt = do
+  submissionReady <- newEmptyMVar
   env <- mkEnv opt
   progName <- T.pack <$> getProgName
 
@@ -58,7 +65,7 @@ main = do
 
     logError "Premature exit, must not happen."
 
-mkEnv :: Options -> IO Env
+mkEnv :: ServiceOptions -> IO Env
 mkEnv opt = do
   lgr <- newLogger (awsLogLevel opt) stdout
   newEnv Discover <&> (envLogger .~ lgr) . set envRegion (opt ^. optRegion)
