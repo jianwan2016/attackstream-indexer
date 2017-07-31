@@ -5,7 +5,7 @@
 Watches incoming attackstream files and creates succinct indexes for them.
 
 This job is expecting a `balanced submissions topic` as its input.
-This topic is nprmally produced by `atlasdos-submissions-balancer` job and its expected contract is desctribed in [fileChange.avsc](contract/fileChange.avsc)
+This topic is normally produced by `atlasdos-submissions-balancer` job and its expected contract is desctribed in [fileChange.avsc](contract/fileChange.avsc)
 
 ## Running locally
 `run.sh` script can be used to run job locally.
