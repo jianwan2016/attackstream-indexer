@@ -27,6 +27,19 @@ import App.Orphans    ()
 
 type AppName = Text
 
+newtype SubmissionsService a = SubmissionsService
+  { unSubmissionsService :: LoggingT AWS a
+  }
+  deriving ( Functor, Applicative, Monad, MonadIO, MonadBase IO, MonadThrow, MonadCatch
+           , MonadMask, MonadAWS, MonadLogger, MonadResource)
+
+runSubmissionsService :: HasEnv e => e -> LogLevel -> SubmissionsService () -> IO ()
+runSubmissionsService e lvl val =
+  runResourceT
+  . runAWS e
+  . runLogT' lvl
+  $ unSubmissionsService val
+
 class ( MonadReader AppOptions m
       , MonadState AppState m
       , MonadLogger m
