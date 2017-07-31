@@ -5,7 +5,7 @@ import Control.Lens
 import Control.Monad.Logger  (LogLevel (..))
 import Data.Semigroup        ((<>))
 import Network.AWS.Data.Text (FromText (..), fromText)
-import Network.AWS.S3.Types  (Region (..))
+import Network.AWS.S3.Types  (BucketName (..), Region (..))
 import Network.Socket        (HostName)
 import Network.StatsD        (SampleRate (..))
 import Options.Applicative
@@ -29,11 +29,12 @@ data Options = Options
   , _optKafkaQueuedMaxMessagesKBytes :: Int
   , _optKafkaGroupId                 :: ConsumerGroupId
   , _optKafkaConsumerCommitPeriodSec :: Int
-  , _optCommandsTopic                :: TopicName
+  , _optInputTopic                   :: TopicName
   , _optStatsdHost                   :: HostName
   , _optStatsdPort                   :: Int
   , _optStatsdTags                   :: [StatsTag]
   , _optSampleRate                   :: SampleRate
+  , _optXmlIndexBucket               :: BucketName
   } deriving (Show)
 
 makeLenses ''Options
@@ -89,10 +90,10 @@ options = Options
         <> help "Kafka consumer offsets commit period (in seconds)"
         )
   <*> ( TopicName <$> strOption
-        (  long "commands-topic"
+        (  long "input-topic"
         <> short 'i'
         <> metavar "TOPIC"
-        <> help "Commands topic"))
+        <> help "Input topic"))
   <*> strOption
         (  long "statsd-host"
         <> short 's'
@@ -118,6 +119,11 @@ options = Options
         <> metavar "SAMPLE_RATE"
         <> showDefault <> value 0.01
         <> help "StatsD sample rate"))
+  <*> readOrFromTextOption
+        (  long "xml-index-bucket"
+        <> short 'x'
+        <> metavar "XML_INDEX_BUCKET_NAME"
+        <> help "XML index bucket name")
 
 awsLogLevel :: Options -> AWS.LogLevel
 awsLogLevel o = case o ^. optLogLevel of
