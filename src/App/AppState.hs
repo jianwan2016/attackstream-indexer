@@ -1,7 +1,18 @@
+{-# LANGUAGE TemplateHaskell #-}
 module App.AppState
 where
 
-data AppState = AppState {}
+import Control.Lens
+import Data.Map.Strict      (Map, empty)
+import Kafka.Consumer.Types
+import Kafka.Types
+
+data AppState = AppState
+  { _partitionOffsetMap :: Map (TopicName, PartitionId) PartitionOffset
+  , _filesCount         :: Int
+  }
 
 appStateEmpty :: AppState
-appStateEmpty = AppState {}
+appStateEmpty = AppState empty 0
+
+makeLenses ''AppState
