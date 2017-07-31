@@ -11,7 +11,7 @@ path=$(stack path --local-install-root)
 ${path}/bin/${exe} \
   --kafka-broker localhost:9092 \
   --kafka-schema-registry http://localhost:8081 \
-  --kafka-group-id ${CLUB_NAME}--indexer-group \
+  --kafka-group-id ${CLUB_NAME}--submissions-indexer-group \
   --input-topic ${CLUB_NAME}--atlasdos-submissions-balanced \
   --xml-index-bucket ${CLUB_NAME}--atlasdos-submissions-index-bucket
   --kafka-poll-timeout-ms 10000 \
