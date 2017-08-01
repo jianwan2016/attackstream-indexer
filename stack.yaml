@@ -16,7 +16,7 @@ packages:
   extra-dep: true
 - location:
     git: git@github.com:haskell-works/hw-xml.git
-    commit: 0e0f72e9416535a94e0dc5e08936e75242783f6c
+    commit: 5c3df382b1dfbcf5b3b3e61edb889f217adbc4d9
   extra-dep: true
 - location:
     git: git@github.com:haskell-works/hw-hedgehog.git
