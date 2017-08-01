@@ -81,4 +81,5 @@ __pycache*
 /*.idx
 /*.gz
 /*.blank
+/*.copy
 
