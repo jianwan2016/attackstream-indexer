@@ -27,6 +27,7 @@ indexMain opt = case opt ^. optIndexMethod of
   IndexInMemory -> indexInMemory  opt
   IndexBlank    -> indexBlank     opt
   IndexBp       -> indexBp        opt
+  IndexCat      -> indexCat       opt
 
 indexInMemory :: IndexOptions -> IO ()
 indexInMemory opt = do
@@ -81,6 +82,31 @@ indexBlank opt = do
     $   sourceFileBS filename
     .|  blankXml
     .|  sinkFileBS (filename <> ".blank")
+
+  !timeB <- getPOSIXTime
+  putStrLn $ "Produced blanked XML in " <> show (timeB - timeA)
+
+cat :: Monad m => Conduit BS.ByteString m BS.ByteString
+cat = do
+  mbs <- await
+  case mbs of
+    Just bs -> do
+      yield (fst (BS.unfoldrN (BS.length bs) BS.uncons bs))
+      cat
+    Nothing -> return ()
+
+indexCat :: IndexOptions -> IO ()
+indexCat opt = do
+  let filename = opt ^. optFilename
+
+  putStrLn $ "Indexing via file: " <> show filename
+
+  !timeA  <- getPOSIXTime
+
+  runConduitRes
+    $   sourceFileBS filename
+    .|  cat
+    .|  sinkFileBS (filename <> ".copy")
 
   !timeB <- getPOSIXTime
   putStrLn $ "Produced blanked XML in " <> show (timeB - timeA)
