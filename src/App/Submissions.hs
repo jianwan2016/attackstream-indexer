@@ -47,7 +47,6 @@ submissions consumer timeout sr ib =
     .| L.map (either (const Nothing) Just)
     .| inJust (decodeRecords sr ib)
 
-
 decodeRecords :: (MonadLogger m, MonadResource m, MonadAWS m)
               => SchemaRegistry
               -> BucketName
@@ -65,6 +64,5 @@ decodeMessage sr bs = decodeWithSchema sr (fromStrict bs) >>= throwAs DecodeErr
 
 loadFileStream :: (MonadResource m, MonadAWS m) => BucketName -> FileChangeMessage -> m Submission
 loadFileStream ib msg =
-  let bucket                 = BucketName $ fileChangeMessageBucketName msg
-      objKey@(ObjectKey key) = ObjectKey $ fileChangeMessageObjectKey msg
-  in Submission msg <$> downloadLBS bucket objKey
+  let objKey = ObjectKey $ fileChangeMessageObjectKey msg
+  in Submission msg <$> downloadLBS ib objKey

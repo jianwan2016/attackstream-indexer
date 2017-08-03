@@ -49,19 +49,19 @@ serviceMain opt = do
     consumer <- mkConsumer opt
 
     logInfo "Spawning prefetcher"
-    _ <- forkIOThrowInParent $ runSubmissionsService env (opt ^. optLogLevel) $
+    _ <- forkIOThrowInParent . runSubmissionsService env (opt ^. optLogLevel) .
       void . runConduit $
         submissions consumer (opt ^. optKafkaPollTimeoutMs) sr (opt ^. optXmlIndexBucket)
         .| mvarRecordSink submissionReady
 
-    logInfo "Running Kafka Consumer"
+    logInfo "Processing submissions"
     runConduit $
       mvarSource submissionReady
-      .| tap (L.catMaybes .| Srv.handleStream (opt ^. optXmlIndexBucket))
-      .| effect updateOffsetMap
-      .| everyNSeconds (opt ^. optKafkaConsumerCommitPeriodSec)  -- only commit ever N seconds, so we don't hammer Kafka.
-      .| effect (\_ -> get >>= logInfo . show . _filesCount)
-      .| commitStoredOffsetsSink consumer
+        .| tap (L.catMaybes .| Srv.handleStream (opt ^. optXmlIndexBucket))
+        .| effect updateOffsetMap
+        .| everyNSeconds (opt ^. optKafkaConsumerCommitPeriodSec)
+        .| effect (\_ -> get >>= logInfo . show . _filesCount)
+        .| commitStoredOffsetsSink consumer
 
     logError "Premature exit, must not happen."
 

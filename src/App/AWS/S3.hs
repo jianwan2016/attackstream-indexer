@@ -1,6 +1,6 @@
 module App.AWS.S3
 ( downloadLBS
-, putFile, copySingle
+, putFile, putByteString, copySingle
 , BucketName(..)
 , ObjectKey(..)
 , ETag(..)
@@ -42,6 +42,16 @@ putFile :: MonadAWS m
         -> m (Maybe ETag)   -- ^ Etag when the operation is successful
 putFile b k f = do
     req <- chunkedFile chunkSize f
+    view porsETag <$> send (putObject b k req)
+
+-- | Puts ByteStryng into a specified S3 bucket
+putByteString :: MonadAWS m
+        => BucketName       -- ^ Target bucket
+        -> ObjectKey        -- ^ File name on S3
+        -> ByteString       -- ^ File data
+        -> m (Maybe ETag)   -- ^ Etag when the operation is successful
+putByteString b k bs = do
+    let req = toBody bs
     view porsETag <$> send (putObject b k req)
 
 -- | Copies a single object within S3
