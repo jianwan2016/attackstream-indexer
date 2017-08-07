@@ -13,10 +13,10 @@ import qualified App.Submissions          as S
 import Arbor.Logger
 import Control.Exception                         (SomeException)
 import Control.Monad.Catch                       (MonadCatch, catch)
+import Data.List
 import Data.Maybe
 import Data.Semigroup                            ((<>))
 import Data.Serialize
-import Data.String.Utils
 import Data.Word
 import HaskellWorks.Data.Xml
 import HaskellWorks.Data.BalancedParens.Simple
@@ -39,7 +39,7 @@ indexFileName :: String -> String
 indexFileName fname = fname <> indexFileSuffix
 
 isIndexFileName :: String -> Bool
-isIndexFileName = endswith indexFileSuffix
+isIndexFileName = isSuffixOf indexFileSuffix
 
 data XmlIndexFile = XmlIndexFile
   { xiFilepath     :: String
