@@ -38,31 +38,30 @@ submissions :: (MonadAWS m, MonadResource m, MonadLogger m)
             => KafkaConsumer
             -> Timeout
             -> SchemaRegistry
-            -> BucketName
             -> Source m (Maybe (ConsumerRecord (Maybe ByteString) Submission))
-submissions consumer timeout sr ib =
+submissions consumer timeout sr =
     kafkaSourceNoClose consumer timeout
     .| throwLeftSatisfy isFatal
     .| skipNonFatalExcept [isPollTimeout]
     .| L.map (either (const Nothing) Just)
-    .| inJust (decodeRecords sr ib)
+    .| inJust (decodeRecords sr)
 
 decodeRecords :: (MonadLogger m, MonadResource m, MonadAWS m)
               => SchemaRegistry
-              -> BucketName
               -> Conduit (ConsumerRecord k (Maybe ByteString)) m (ConsumerRecord k Submission)
-decodeRecords sr ib =
+decodeRecords sr =
   L.map sequence
   .| L.catMaybes
   .| L.mapM (traverse $ decodeMessage sr)
   .| L.filter (\x -> fileChangeMessageObjectSize (crValue x) > 0)
   .| effect (\x -> logDebug $ "[Prefetch] " <> (T.unpack . fileChangeMessageObjectKey . crValue) x)
-  .| L.mapM (traverse (loadFileStream ib))
+  .| L.mapM (traverse loadFileStream)
 
 decodeMessage :: (MonadIO m, MonadThrow m) => SchemaRegistry -> ByteString -> m FileChangeMessage
 decodeMessage sr bs = decodeWithSchema sr (fromStrict bs) >>= throwAs DecodeErr
 
-loadFileStream :: (MonadResource m, MonadAWS m) => BucketName -> FileChangeMessage -> m Submission
-loadFileStream ib msg =
-  let objKey = ObjectKey $ fileChangeMessageObjectKey msg
-  in Submission msg <$> downloadLBS ib objKey
+loadFileStream :: (MonadResource m, MonadAWS m) => FileChangeMessage -> m Submission
+loadFileStream msg =
+  let bucket = BucketName $ fileChangeMessageBucketName msg
+      objKey = ObjectKey $ fileChangeMessageObjectKey msg
+  in Submission msg <$> downloadLBS bucket objKey
