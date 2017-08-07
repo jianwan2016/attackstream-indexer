@@ -50,7 +50,6 @@ executable attackstream-indexer
                       , hw-rankselect-base
                       , hw-xml
                       , lens
-                      , MissingH
                       , monad-control
                       , monad-logger
                       , mtl
@@ -117,7 +116,6 @@ library
                       , hw-rankselect-base
                       , hw-xml
                       , lens
-                      , MissingH
                       , monad-control
                       , monad-logger
                       , mtl
