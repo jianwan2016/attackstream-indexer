@@ -51,7 +51,7 @@ serviceMain opt = do
     logInfo "Spawning prefetcher"
     _ <- forkIOThrowInParent . runSubmissionsService env (opt ^. optLogLevel) .
       void . runConduit $
-        submissions consumer (opt ^. optKafkaPollTimeoutMs) sr (opt ^. optXmlIndexBucket)
+        submissions consumer (opt ^. optKafkaPollTimeoutMs) sr
         .| mvarRecordSink submissionReady
 
     logInfo "Processing submissions"
