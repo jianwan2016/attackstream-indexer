@@ -11,6 +11,7 @@ import App.Compression
 import qualified App.Submissions          as S
 
 import Arbor.Logger
+import Codec.Compression.GZip
 import Control.Exception                         (SomeException)
 import Control.Monad.Catch                       (MonadCatch, catch)
 import Data.List
@@ -69,5 +70,5 @@ uploadXmlIndexFile :: MonadAWS m => BucketName -> XmlIndexFile -> m Bool
 uploadXmlIndexFile bucketName xi = do
     let bucketPath = ObjectKey . T.pack $ xiFilepath xi
     let indexData = encodeLazy (xiIndex xi)
-    res <- App.AWS.S3.putByteString bucketName bucketPath indexData
+    res <- App.AWS.S3.putByteString bucketName bucketPath (compress indexData)
     return $ isJust res
