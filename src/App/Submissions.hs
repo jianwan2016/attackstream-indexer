@@ -56,12 +56,17 @@ decodeRecords sr =
   .| L.filter (\x -> fileChangeMessageObjectSize (crValue x) > 0)
   .| effect (\x -> logDebug $ "[Prefetch] " <> (T.unpack . fileChangeMessageObjectKey . crValue) x)
   .| L.mapM (traverse loadFileStream)
+  .| L.map sequence
+  .| L.catMaybes
 
 decodeMessage :: (MonadIO m, MonadThrow m) => SchemaRegistry -> ByteString -> m FileChangeMessage
 decodeMessage sr bs = decodeWithSchema sr (fromStrict bs) >>= throwAs DecodeErr
 
-loadFileStream :: (MonadResource m, MonadAWS m) => FileChangeMessage -> m Submission
-loadFileStream msg =
+loadFileStream :: (MonadLogger m, MonadResource m, MonadAWS m) => FileChangeMessage -> m (Maybe Submission)
+loadFileStream msg = do
   let bucket = BucketName $ fileChangeMessageBucketName msg
-      objKey = ObjectKey $ fileChangeMessageObjectKey msg
-  in Submission msg <$> downloadLBS bucket objKey
+      objKey = ObjectKey  $ fileChangeMessageObjectKey msg
+  fileContent <- downloadLBS' bucket objKey
+  case fileContent of
+    Nothing -> logWarn ("Submission file not found: " <> show msg) >> pure Nothing
+    Just lbs -> return . Just $ Submission msg lbs

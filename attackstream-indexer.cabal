@@ -35,6 +35,7 @@ executable attackstream-indexer
                       , hedgehog
                       , hs-arbor-logger
                       , hspec
+                      , http-types
                       , hw-balancedparens
                       , hw-bits
                       , hw-conduit
@@ -101,6 +102,7 @@ library
                       , hedgehog
                       , hs-arbor-logger
                       , hspec
+                      , http-types
                       , hw-balancedparens
                       , hw-bits
                       , hw-conduit
@@ -155,6 +157,7 @@ test-suite tests
                       , hedgehog
                       , hs-arbor-logger
                       , hspec
+                      , http-types
                       , hw-balancedparens
                       , hw-bits
                       , hw-conduit
