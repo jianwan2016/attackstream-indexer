@@ -118,6 +118,7 @@ library
                       , hw-rankselect-base
                       , hw-xml
                       , lens
+                      , mmap
                       , monad-control
                       , monad-logger
                       , mtl

@@ -26,6 +26,7 @@ data IndexMethod
   | IndexBlank
   | IndexBp
   | IndexCat
+  | IndexIdx
   deriving (Eq, Show, Read)
 
 data IndexOptions = IndexOptions
