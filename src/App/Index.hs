@@ -1,4 +1,5 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns         #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 
 module App.Index where
 
@@ -7,26 +8,35 @@ import Data.Conduit.Combinators
 import Control.Lens
 import Data.Conduit
 import Data.Monoid                                        ((<>))
+import Data.Serialize
 import Data.Time.Clock.POSIX
 import Data.Word
+import Foreign
 import HaskellWorks.Data.BalancedParens.Simple
 import HaskellWorks.Data.Bits.BitShown
 import HaskellWorks.Data.FromByteString
 import HaskellWorks.Data.Xml.Conduit
 import HaskellWorks.Data.Xml.Conduit.Blank
+import HaskellWorks.Data.Xml.Index
 import HaskellWorks.Data.Xml.Succinct.Cursor.BlankedXml
 import HaskellWorks.Data.Xml.Succinct.Cursor.InterestBits
 import Prelude                                            as P
+import System.IO.MMap
 
 import qualified Data.ByteString                                      as BS
+import qualified Data.ByteString.Internal                             as BSI
+import qualified Data.ByteString.Lazy                                 as BSL
 import qualified Data.Vector.Storable                                 as DVS
 import qualified HaskellWorks.Data.Xml.Succinct.Cursor.BalancedParens as CBP
+
+{-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
 
 indexMain :: IndexOptions -> IO ()
 indexMain opt = case opt ^. optIndexMethod of
   IndexInMemory -> indexInMemory  opt
   IndexBlank    -> indexBlank     opt
   IndexBp       -> indexBp        opt
+  IndexIdx      -> indexIdx       opt
   IndexCat      -> indexCat       opt
 
 indexInMemory :: IndexOptions -> IO ()
@@ -66,6 +76,47 @@ indexBp opt = do
     .|  blankedXmlToBalancedParens2
     .|  compressWordAsBit
     .|  sinkFileBS (filename <> ".bp")
+
+  !timeB <- getPOSIXTime
+  putStrLn $ "Produced blanked XML in " <> show (timeB - timeA)
+
+loadVector :: FilePath -> IO (DVS.Vector Word64)
+loadVector filepath = do
+  (fptr :: ForeignPtr Word8, offset, size) <- mmapFileForeignPtr filepath ReadOnly Nothing
+  let !bs = fromByteString (BSI.fromForeignPtr (castForeignPtr fptr) offset size)
+  return bs
+
+indexIdx :: IndexOptions -> IO ()
+indexIdx opt = do
+  let filename = opt ^. optFilename
+
+  putStrLn $ "Indexing via file: " <> show filename
+
+  !timeA  <- getPOSIXTime
+
+  runConduitRes
+    $   sourceFileBS filename
+    .|  blankXml
+    .|  sinkFileBS (filename <> ".blank")
+
+  runConduitRes
+    $   sourceFileBS (filename <> ".blank")
+    .|  blankedXmlToBalancedParens2
+    .|  compressWordAsBit
+    .|  sinkFileBS (filename <> ".ib")
+
+  runConduitRes
+    $   sourceFileBS (filename <> ".blank")
+    .|  blankedXmlToBalancedParens2
+    .|  compressWordAsBit
+    .|  sinkFileBS (filename <> ".bp")
+
+  ibData <- loadVector (filename <> ".ib")
+  bpData <- loadVector (filename <> ".bp")
+
+  let idx = Index "1.0" (BitShown ibData) (BitShown bpData)
+
+  BSL.writeFile (filename <> ".idx") (encodeLazy idx)
 
   !timeB <- getPOSIXTime
   putStrLn $ "Produced blanked XML in " <> show (timeB - timeA)
