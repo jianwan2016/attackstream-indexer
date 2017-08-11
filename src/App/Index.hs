@@ -101,8 +101,7 @@ indexIdx opt = do
 
   runConduitRes
     $   sourceFileBS (filename <> ".blank")
-    .|  blankedXmlToBalancedParens2
-    .|  compressWordAsBit
+    .|  blankedXmlToInterestBits
     .|  sinkFileBS (filename <> ".ib")
 
   runConduitRes
