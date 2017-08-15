@@ -14,7 +14,6 @@ ${path}/bin/${exe} service \
   --kafka-schema-registry http://${KAFKA_HOST}:8081 \
   --kafka-group-id ${CLUB_NAME}--submissions-indexer-group-${USER} \
   --input-topic ${CLUB_NAME}--atlasdos-submissions-balanced \
-  --prefetch-size 2 \
   --xml-index-bucket ${CLUB_NAME}--atlasdos-submissions-index-bucket
   --kafka-poll-timeout-ms 10000 \
   --log-level LevelDebug
