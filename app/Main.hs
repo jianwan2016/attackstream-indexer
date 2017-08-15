@@ -50,10 +50,7 @@ serviceMain opt = do
     consumer <- mkConsumer opt
 
     logInfo "Spawning prefetcher"
-    _ <- forkIOThrowInParent . runSubmissionsService env (opt ^. optLogLevel) .
-      void . runConduit $
-        submissions consumer (opt ^. optKafkaPollTimeoutMs) sr
-        .| boundedChanRecordSink submissionsReady
+    _ <- forkIOThrowInParent $ runPrefetcher env opt sr consumer submissionsReady
 
     logInfo "Processing submissions"
     runConduit $

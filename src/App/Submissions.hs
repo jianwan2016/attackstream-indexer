@@ -4,6 +4,9 @@ module App.Submissions
 where
 
 import Arbor.Logger
+import Control.Concurrent.BoundedChan
+import Control.Lens
+import Control.Monad (void)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource
 import Data.ByteString                      (ByteString)
@@ -13,11 +16,12 @@ import Data.Semigroup                       ((<>))
 import HaskellWorks.Data.Conduit.Combinator
 import Kafka.Avro                           (SchemaRegistry, decodeWithSchema)
 import Kafka.Conduit.Source
-import Network.AWS                          (MonadAWS)
+import Network.AWS                          (MonadAWS, HasEnv)
 
 import App
 import App.AWS.S3
 import App.FileChange
+import App.Kafka
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Conduit.List    as L
@@ -33,6 +37,18 @@ submissionFilePath fcm =
   let bucket = BucketName . fileChangeMessageBucketName $ fcm
       key = ObjectKey . fileChangeMessageObjectKey $ fcm
   in s3UriString bucket key
+
+runPrefetcher :: HasEnv e
+              => e
+              -> ServiceOptions
+              -> SchemaRegistry
+              -> KafkaConsumer
+              -> BoundedChan (Maybe (ConsumerRecord (Maybe Data.ByteString.ByteString) Submission))
+              -> IO ()
+runPrefetcher env opt sr consumer submissionsReady = runSubmissionsService env (opt ^. optLogLevel) $
+    void . runConduit $
+      submissions consumer (opt ^. optKafkaPollTimeoutMs) sr
+      .| boundedChanRecordSink submissionsReady
 
 submissions :: (MonadAWS m, MonadResource m, MonadLogger m)
             => KafkaConsumer
