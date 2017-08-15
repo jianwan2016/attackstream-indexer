@@ -22,11 +22,17 @@ import qualified Data.Conduit.List    as L
 import qualified Data.Text            as T
 import Network.AWS.S3
 
+extractFound :: MonadLogger m => Conduit S.SubmissionResult m S.Submission
+extractFound = awaitForever $ \x -> case x of
+  S.SubmissionOk s -> yield s
+  S.SubmissionNotFound msg -> logWarn ("Submission file not found: " <> show msg)
+
 handleStream :: (MonadApp m, MonadAWS m)
              => BucketName
-             -> Sink (ConsumerRecord k S.Submission) m ()
+             -> Sink (ConsumerRecord k S.SubmissionResult) m ()
 handleStream bucketName =
   L.map crValue
+  .| extractFound
   .| effect (\x -> logInfo $ "[Handle] " <> show (S.submissionFile x))
   .| L.filter (not . isIndexFileName . T.unpack . fileChangeMessageObjectKey . S.submissionFile)
   .| L.mapM indexXmlFileEither

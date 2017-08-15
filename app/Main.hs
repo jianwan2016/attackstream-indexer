@@ -9,6 +9,7 @@ import App.Kafka
 import App.Submissions
 import Arbor.Logger
 import Control.Concurrent                   hiding (yield)
+import Control.Concurrent.Async
 import Control.Concurrent.BoundedChan
 import Control.Lens
 import Control.Monad                        (void)
@@ -55,7 +56,7 @@ serviceMain opt = do
     logInfo "Processing submissions"
     runConduit $
       boundedChanSource submissionsReady
-        .| tap (L.catMaybes .| Srv.handleStream (opt ^. optXmlIndexBucket))
+        .| tap (L.catMaybes .| L.mapM (liftIO . traverse wait) .| Srv.handleStream (opt ^. optXmlIndexBucket))
         .| effect updateOffsetMap
         .| everyNSeconds (opt ^. optKafkaConsumerCommitPeriodSec)
         .| effect (\_ -> get >>= logInfo . show . _filesCount)

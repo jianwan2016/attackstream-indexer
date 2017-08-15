@@ -4,6 +4,7 @@ module App.Submissions
 where
 
 import Arbor.Logger
+import Control.Concurrent.Async
 import Control.Concurrent.BoundedChan
 import Control.Lens
 import Control.Monad (void)
@@ -17,7 +18,7 @@ import Data.Semigroup                       ((<>))
 import HaskellWorks.Data.Conduit.Combinator
 import Kafka.Avro                           (SchemaRegistry, decodeWithSchema)
 import Kafka.Conduit.Source
-import Network.AWS                          (MonadAWS, HasEnv)
+import Network.AWS                          (MonadAWS, HasEnv, runAWS)
 
 import App
 import App.AWS.S3
@@ -33,6 +34,12 @@ data Submission = Submission
   , submissionContent :: LBS.ByteString
   } deriving (Eq, Show)
 
+
+data SubmissionResult
+  = SubmissionOk Submission
+  | SubmissionNotFound FileChangeMessage
+  deriving (Eq, Show)
+
 submissionFilePath :: FileChangeMessage -> FilePath
 submissionFilePath fcm =
   let bucket = BucketName . fileChangeMessageBucketName $ fcm
@@ -44,7 +51,7 @@ runPrefetcher :: HasEnv e
               -> ServiceOptions
               -> SchemaRegistry
               -> KafkaConsumer
-              -> BoundedChan (Maybe (ConsumerRecord () Submission))
+              -> BoundedChan (Maybe (ConsumerRecord () (Async SubmissionResult)))
               -> IO ()
 runPrefetcher env opt sr consumer submissionsReady = runSubmissionsService env (opt ^. optLogLevel) $
     void . runConduit $
@@ -52,31 +59,35 @@ runPrefetcher env opt sr consumer submissionsReady = runSubmissionsService env (
       .| throwLeftSatisfy isFatal
       .| skipNonFatalExcept [isPollTimeout]
       .| L.map (either (const Nothing) Just)
-      .| inJust (decodeRecords sr)
+      .| inJust (decodeRecords env sr)
       .| boundedChanRecordSink submissionsReady
 
-decodeRecords :: (MonadLogger m, MonadResource m, MonadAWS m)
-              => SchemaRegistry
-              -> Conduit (ConsumerRecord k (Maybe ByteString)) m (ConsumerRecord () Submission)
-decodeRecords sr =
+decodeRecords :: (MonadLogger m, MonadResource m, MonadAWS m, HasEnv e)
+              => e
+              -> SchemaRegistry
+              -> Conduit (ConsumerRecord k (Maybe ByteString)) m (ConsumerRecord () (Async SubmissionResult))
+decodeRecords env sr =
   L.map (first (const ()))
   .| L.map sequence
   .| L.catMaybes
   .| L.mapM (traverse $ decodeMessage sr)
   .| L.filter (\x -> fileChangeMessageObjectSize (crValue x) > 0)
   .| effect (\x -> logDebug $ "[Prefetch] " <> (T.unpack . fileChangeMessageObjectKey . crValue) x)
-  .| L.mapM (traverse loadFileStream)
-  .| L.map sequence
-  .| L.catMaybes
+  .| L.mapM (\r -> do
+              let v = crValue r
+              res <- liftIO $ async (runResourceT (runAWS env (loadFileStream v)))
+              let asyncMaybeSubmission = const res <$> r
+              return asyncMaybeSubmission
+            )
 
 decodeMessage :: (MonadIO m, MonadThrow m) => SchemaRegistry -> ByteString -> m FileChangeMessage
 decodeMessage sr bs = decodeWithSchema sr (fromStrict bs) >>= throwAs DecodeErr
 
-loadFileStream :: (MonadLogger m, MonadResource m, MonadAWS m) => FileChangeMessage -> m (Maybe Submission)
+loadFileStream :: (MonadResource m, MonadAWS m) => FileChangeMessage -> m SubmissionResult
 loadFileStream msg = do
   let bucket = BucketName $ fileChangeMessageBucketName msg
       objKey = ObjectKey  $ fileChangeMessageObjectKey msg
   fileContent <- downloadLBS' bucket objKey
   case fileContent of
-    Nothing -> logWarn ("Submission file not found: " <> show msg) >> pure Nothing
-    Just lbs -> return . Just $ Submission msg lbs
+    Nothing -> pure (SubmissionNotFound msg)
+    Just lbs -> return . SubmissionOk $ Submission msg lbs
