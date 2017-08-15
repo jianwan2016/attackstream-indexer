@@ -9,6 +9,7 @@ import App.Kafka
 import App.Submissions
 import Arbor.Logger
 import Control.Concurrent                   hiding (yield)
+import Control.Concurrent.BoundedChan
 import Control.Lens
 import Control.Monad                        (void)
 import Control.Monad.IO.Class               (MonadIO, liftIO)
@@ -37,7 +38,7 @@ main = do
 
 serviceMain :: ServiceOptions -> IO ()
 serviceMain opt = do
-  submissionReady <- newEmptyMVar
+  submissionsReady <- newBoundedChan (opt ^. optPrefetchSize)
   env <- mkEnv opt
   progName <- T.pack <$> getProgName
 
@@ -52,11 +53,11 @@ serviceMain opt = do
     _ <- forkIOThrowInParent . runSubmissionsService env (opt ^. optLogLevel) .
       void . runConduit $
         submissions consumer (opt ^. optKafkaPollTimeoutMs) sr
-        .| mvarRecordSink submissionReady
+        .| boundedChanRecordSink submissionsReady
 
     logInfo "Processing submissions"
     runConduit $
-      mvarSource submissionReady
+      boundedChanSource submissionsReady
         .| tap (L.catMaybes .| Srv.handleStream (opt ^. optXmlIndexBucket))
         .| effect updateOffsetMap
         .| everyNSeconds (opt ^. optKafkaConsumerCommitPeriodSec)
