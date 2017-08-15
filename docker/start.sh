@@ -19,6 +19,7 @@ attackstream-indexer service \
   ${KAFKA_QUEUED_MAX_MESSAGES_KBYTES+ --kafka-queued-max-messages-kbytes  "${KAFKA_QUEUED_MAX_MESSAGES_KBYTES}" } \
   ${KAFKA_CONSUMER_COMMIT_PERIOD_SEC+ --kafka-consumer-commit-period-sec  "${KAFKA_CONSUMER_COMMIT_PERIOD_SEC}" } \
   ${INPUT_TOPIC_IN+                   --input-topic                       "${INPUT_TOPIC_IN}"                   } \
+  ${PREFETCH_SIZE+                    --prefetch-size                     "${PREFETCH_SIZE}"                    } \
   ${XML_INDEX_BUCKET_OUT+             --xml-index-bucket                  "${XML_INDEX_BUCKET_OUT}"             } \
   ${STATSD_HOST+                      --statsd-host                       "${STATSD_HOST}"                      } \
   ${STATSD_SAMPLE_RATE+               --statsd-sample-rate                "${STATSD_SAMPLE_RATE}"               } \

@@ -49,6 +49,7 @@ data ServiceOptions = ServiceOptions
   , _optKafkaGroupId                 :: ConsumerGroupId
   , _optKafkaConsumerCommitPeriodSec :: Int
   , _optInputTopic                   :: TopicName
+  , _optPrefetchSize                 :: Int
   , _optStatsdHost                   :: HostName
   , _optStatsdPort                   :: Int
   , _optStatsdTags                   :: [StatsTag]
@@ -128,6 +129,12 @@ serviceOptions = ServiceOptions
         <> short 'i'
         <> metavar "TOPIC"
         <> help "Input topic"))
+  <*> readOption
+        (  long "prefetch-size"
+        <> short 'n'
+        <> metavar "PREFETCH_SIZE"
+        <> help "Maximum number of prefetches"
+        )
   <*> strOption
         (  long "statsd-host"
         <> short 's'

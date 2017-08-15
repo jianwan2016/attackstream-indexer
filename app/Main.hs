@@ -10,12 +10,13 @@ import App.Submissions
 import Arbor.Logger
 import Control.Concurrent                   hiding (yield)
 import Control.Lens
-import Control.Monad                        (void)
+import Control.Monad                        (void, forM_)
 import Control.Monad.IO.Class               (MonadIO, liftIO)
 import Control.Monad.State.Class
 import Control.Monad.State.Strict           (MonadState (..))
 import Control.Monad.Trans.AWS
 import Data.Conduit
+import Data.Monoid                          ((<>))
 import HaskellWorks.Data.Conduit.Combinator
 import Kafka.Avro                           (schemaRegistry)
 import Kafka.Conduit.Sink
@@ -37,7 +38,8 @@ main = do
 
 serviceMain :: ServiceOptions -> IO ()
 serviceMain opt = do
-  submissionReady <- newEmptyMVar
+  consumerRecordReady <- newEmptyMVar
+  submissionReady     <- newEmptyMVar
   env <- mkEnv opt
   progName <- T.pack <$> getProgName
 
@@ -48,11 +50,19 @@ serviceMain opt = do
     logInfo "Creating Kafka Consumer"
     consumer <- mkConsumer opt
 
-    logInfo "Spawning prefetcher"
+    logInfo "Spawning consumer thread"
     _ <- forkIOThrowInParent . runSubmissionsService env (opt ^. optLogLevel) .
       void . runConduit $
-        submissions consumer (opt ^. optKafkaPollTimeoutMs) sr
-        .| mvarRecordSink submissionReady
+        submissions consumer (opt ^. optKafkaPollTimeoutMs)
+        .| mvarRecordSink consumerRecordReady
+
+    forM_ [1..opt ^. optPrefetchSize] $ \i -> do
+      logInfo $ "Spawning prefetcher #" <> show i
+      forkIOThrowInParent . runSubmissionsService env (opt ^. optLogLevel) .
+        void . runConduit $
+          mvarSource consumerRecordReady
+          .| inJust (decodeRecords sr)
+          .| mvarRecordSink submissionReady
 
     logInfo "Processing submissions"
     runConduit $
