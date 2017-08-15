@@ -1,16 +1,15 @@
-module App.Kafka
-where
+module App.Kafka where
 
 import App.Options
-import Control.Concurrent           (MVar, putMVar, takeMVar)
-import Control.Lens                 hiding (cons)
-import Control.Monad                (void)
-import Control.Monad.IO.Class       (MonadIO, liftIO)
+import Control.Concurrent             (MVar, putMVar, takeMVar)
+import Control.Concurrent.BoundedChan
+import Control.Lens                   hiding (cons)
+import Control.Monad                  (void)
+import Control.Monad.IO.Class         (MonadIO, liftIO)
 import Control.Monad.Trans.Resource
-import Data.Conduit                 (Sink, Source, awaitForever, yieldM)
-import Data.Monoid                  ((<>))
+import Data.Conduit                   (Sink, Source, awaitForever, yieldM)
+import Data.Monoid                    ((<>))
 import Kafka.Conduit
-
 
 mkConsumer :: MonadResource m => ServiceOptions -> m KafkaConsumer
 mkConsumer opts =
@@ -35,3 +34,9 @@ mvarRecordSink v = awaitForever (liftIO . putMVar v)
 
 mvarSource :: MonadIO m => MVar a -> Source m a
 mvarSource v = yieldM (liftIO $ takeMVar v) >> mvarSource v
+
+boundedChanSource :: MonadIO m => BoundedChan a -> Source m a
+boundedChanSource chan = yieldM (liftIO $ readChan chan) >> boundedChanSource chan
+
+boundedChanRecordSink :: MonadIO m => BoundedChan a -> Sink a m ()
+boundedChanRecordSink chan = awaitForever (liftIO . writeChan chan)

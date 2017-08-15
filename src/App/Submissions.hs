@@ -1,11 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections       #-}
+module App.Submissions
+where
 
-module App.Submissions where
-
-import App
-import App.AWS.S3
-import App.FileChange
 import Arbor.Logger
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource
@@ -17,6 +14,10 @@ import HaskellWorks.Data.Conduit.Combinator
 import Kafka.Avro                           (SchemaRegistry, decodeWithSchema)
 import Kafka.Conduit.Source
 import Network.AWS                          (MonadAWS)
+
+import App
+import App.AWS.S3
+import App.FileChange
 
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Conduit.List    as L
@@ -33,22 +34,17 @@ submissionFilePath fcm =
       key = ObjectKey . fileChangeMessageObjectKey $ fcm
   in s3UriString bucket key
 
--- submissions :: (MonadAWS m, MonadResource m, MonadLogger m)
---             => KafkaConsumer
---             -> Timeout
---             -> SchemaRegistry
---             -> Source m (Maybe (ConsumerRecord (Maybe ByteString) Submission))
-submissions :: (MonadThrow m, MonadIO m)
+submissions :: (MonadAWS m, MonadResource m, MonadLogger m)
             => KafkaConsumer
             -> Timeout
-            -> ConduitM () (Maybe (ConsumerRecord
-                              (Maybe Data.ByteString.ByteString)
-                              (Maybe Data.ByteString.ByteString))) m ()
-submissions consumer timeout =
+            -> SchemaRegistry
+            -> Source m (Maybe (ConsumerRecord (Maybe ByteString) Submission))
+submissions consumer timeout sr =
     kafkaSourceNoClose consumer timeout
     .| throwLeftSatisfy isFatal
     .| skipNonFatalExcept [isPollTimeout]
     .| L.map (either (const Nothing) Just)
+    .| inJust (decodeRecords sr)
 
 decodeRecords :: (MonadLogger m, MonadResource m, MonadAWS m)
               => SchemaRegistry

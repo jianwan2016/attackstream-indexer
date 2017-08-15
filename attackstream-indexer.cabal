@@ -26,6 +26,7 @@ executable attackstream-indexer
                       , attackstream-indexer
                       , avro
                       , binary
+                      , BoundedChan
                       , bytestring
                       , conduit
                       , conduit-combinators
@@ -91,6 +92,7 @@ library
                       , amazonka-s3
                       , avro
                       , binary
+                      , BoundedChan
                       , bytestring
                       , cereal
                       , conduit
