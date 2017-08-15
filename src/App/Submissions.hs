@@ -43,24 +43,16 @@ runPrefetcher :: HasEnv e
               -> ServiceOptions
               -> SchemaRegistry
               -> KafkaConsumer
-              -> BoundedChan (Maybe (ConsumerRecord (Maybe Data.ByteString.ByteString) Submission))
+              -> BoundedChan (Maybe (ConsumerRecord (Maybe ByteString) Submission))
               -> IO ()
 runPrefetcher env opt sr consumer submissionsReady = runSubmissionsService env (opt ^. optLogLevel) $
     void . runConduit $
-      submissions consumer (opt ^. optKafkaPollTimeoutMs) sr
+      kafkaSourceNoClose consumer (opt ^. optKafkaPollTimeoutMs)
+      .| throwLeftSatisfy isFatal
+      .| skipNonFatalExcept [isPollTimeout]
+      .| L.map (either (const Nothing) Just)
+      .| inJust (decodeRecords sr)
       .| boundedChanRecordSink submissionsReady
-
-submissions :: (MonadAWS m, MonadResource m, MonadLogger m)
-            => KafkaConsumer
-            -> Timeout
-            -> SchemaRegistry
-            -> Source m (Maybe (ConsumerRecord (Maybe ByteString) Submission))
-submissions consumer timeout sr =
-    kafkaSourceNoClose consumer timeout
-    .| throwLeftSatisfy isFatal
-    .| skipNonFatalExcept [isPollTimeout]
-    .| L.map (either (const Nothing) Just)
-    .| inJust (decodeRecords sr)
 
 decodeRecords :: (MonadLogger m, MonadResource m, MonadAWS m)
               => SchemaRegistry
