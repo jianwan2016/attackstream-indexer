@@ -9,6 +9,7 @@ import Control.Lens
 import Control.Monad (void)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource
+import Data.Bifunctor
 import Data.ByteString                      (ByteString)
 import Data.ByteString.Lazy                 (fromStrict)
 import Data.Conduit
@@ -43,7 +44,7 @@ runPrefetcher :: HasEnv e
               -> ServiceOptions
               -> SchemaRegistry
               -> KafkaConsumer
-              -> BoundedChan (Maybe (ConsumerRecord (Maybe ByteString) Submission))
+              -> BoundedChan (Maybe (ConsumerRecord () Submission))
               -> IO ()
 runPrefetcher env opt sr consumer submissionsReady = runSubmissionsService env (opt ^. optLogLevel) $
     void . runConduit $
@@ -56,9 +57,10 @@ runPrefetcher env opt sr consumer submissionsReady = runSubmissionsService env (
 
 decodeRecords :: (MonadLogger m, MonadResource m, MonadAWS m)
               => SchemaRegistry
-              -> Conduit (ConsumerRecord k (Maybe ByteString)) m (ConsumerRecord k Submission)
+              -> Conduit (ConsumerRecord k (Maybe ByteString)) m (ConsumerRecord () Submission)
 decodeRecords sr =
-  L.map sequence
+  L.map (first (const ()))
+  .| L.map sequence
   .| L.catMaybes
   .| L.mapM (traverse $ decodeMessage sr)
   .| L.filter (\x -> fileChangeMessageObjectSize (crValue x) > 0)

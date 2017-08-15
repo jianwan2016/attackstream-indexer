@@ -5,7 +5,6 @@ where
 import Arbor.Logger
 import Control.Lens
 import Control.Monad.Catch                  (throwM)
-import Data.ByteString                      (ByteString)
 import Data.Conduit
 import Data.Semigroup                       ((<>))
 import HaskellWorks.Data.Conduit.Combinator
@@ -25,7 +24,7 @@ import Network.AWS.S3
 
 handleStream :: (MonadApp m, MonadAWS m)
              => BucketName
-             -> Sink (ConsumerRecord (Maybe ByteString) S.Submission) m ()
+             -> Sink (ConsumerRecord k S.Submission) m ()
 handleStream bucketName =
   L.map crValue
   .| effect (\x -> logInfo $ "[Handle] " <> show (S.submissionFile x))
