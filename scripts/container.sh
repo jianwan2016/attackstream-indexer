@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BUILD_NAME=$(cat *.cabal | grep -e "^name" | tr -s " " | cut -d' ' -f2)
-BUILD_BINTRAY=arbornetworks-docker-docker.bintray.io
+BUILD_BINTRAY=arbornetworks-docker-v2.bintray.io
 FORK_BUILD=true && [ "${CIRCLE_PROJECT_USERNAME:-}" = "packetloop" ] && [ "${CIRCLE_BRANCH:-}" = "master" ] && FORK_BUILD=false
 BUILD_VERSION=$(cat *.cabal | grep -e "^version" | tr -s " " | cut -d' ' -f2)
 BUILD_HASH=$(git rev-list --count HEAD) && ${FORK_BUILD} && BUILD_HASH="${BUILD_HASH}-$(git rev-parse --short HEAD)"
@@ -17,7 +17,7 @@ _bintray_credentials="${_bintray_username}:${_bintray_password}"
 cat "${HOME}/.docker/config.json" | grep "\"${BUILD_BINTRAY}\"" > /dev/null
 if [ $? -ne 0 ]; then
   set +e
-  docker login -e ${BINTRAY_EMAIL} -u ${BINTRAY_USER} -p ${BINTRAY_API_KEY} ${BUILD_BINTRAY}
+  docker login -u ${BINTRAY_USER} -p ${BINTRAY_API_KEY} ${BUILD_BINTRAY}
   set -e
 fi
 
