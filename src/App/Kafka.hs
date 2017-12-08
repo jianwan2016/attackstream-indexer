@@ -9,23 +9,25 @@ import Control.Monad.IO.Class         (MonadIO, liftIO)
 import Control.Monad.Trans.Resource
 import Data.Conduit                   (Sink, Source, awaitForever, yieldM)
 import Data.Monoid                    ((<>))
-import Kafka.Conduit
+import Kafka.Conduit.Sink             as KSnk
+import Kafka.Conduit.Source           as KSrc
 
 mkConsumer :: MonadResource m => ServiceOptions -> m KafkaConsumer
 mkConsumer opts =
-  let props = consumerBrokersList [opts ^. optKafkaBroker]
+  let props = KSrc.brokersList [opts ^. optKafkaBroker]
               <> groupId (opts ^. optKafkaGroupId)
               <> noAutoCommit
-              <> consumerSuppressDisconnectLogs
-              <> consumerQueuedMaxMessagesKBytes (opts ^. optKafkaQueuedMaxMessagesKBytes)
+              <> KSrc.suppressDisconnectLogs
+              <> queuedMaxMessagesKBytes (opts ^. optKafkaQueuedMaxMessagesKBytes)
       sub = topics [opts ^. optInputTopic] <> offsetReset Earliest
       cons = newConsumer props sub >>= either throwM return
    in snd <$> allocate cons (void . closeConsumer)
 
 mkProducer :: MonadResource m => ServiceOptions -> m KafkaProducer
 mkProducer opts =
-  let props = producerBrokersList [opts ^. optKafkaBroker]
-              <> producerSuppressDisconnectLogs
+  let props = KSnk.brokersList [opts ^. optKafkaBroker]
+              <> KSnk.suppressDisconnectLogs
+              <> KSnk.sendTimeout (Timeout 0) -- message sending timeout, 0 means "no timeout"
       prod = newProducer props >>= either throwM return
    in snd <$> allocate prod closeProducer
 

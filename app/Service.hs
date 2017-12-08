@@ -8,7 +8,7 @@ import Control.Monad.Catch                  (throwM)
 import Data.Conduit
 import Data.Semigroup                       ((<>))
 import HaskellWorks.Data.Conduit.Combinator
-import Kafka.Conduit.Sink
+import Kafka.Consumer.Types
 import Network.AWS                          (MonadAWS)
 import Network.StatsD.Datadog               hiding (encodeValue)
 import Network.StatsD.Monad
@@ -17,10 +17,10 @@ import App
 import App.FileChange
 import App.XmlIndexFile
 
-import qualified App.Submissions      as S
-import qualified Data.Conduit.List    as L
-import qualified Data.Text            as T
-import Network.AWS.S3
+import qualified App.Submissions   as S
+import qualified Data.Conduit.List as L
+import qualified Data.Text         as T
+import           Network.AWS.S3
 
 extractFound :: MonadLogger m => Conduit S.SubmissionResult m S.Submission
 extractFound = awaitForever $ \x -> case x of

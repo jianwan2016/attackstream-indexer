@@ -20,7 +20,7 @@ import Control.Monad.Trans.AWS
 import Data.Conduit
 import HaskellWorks.Data.Conduit.Combinator
 import Kafka.Avro                           (schemaRegistry)
-import Kafka.Conduit.Sink
+import Kafka.Consumer
 import System.Environment
 import System.IO                            (stdout)
 

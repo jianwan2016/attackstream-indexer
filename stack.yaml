@@ -1,11 +1,7 @@
-resolver: lts-8.23
+resolver: lts-9.17
 
 packages:
 - '.'
-- location:
-    git: git@github.com:haskell-works/hw-haskell-avro.git
-    commit: c2169b9128ef0eedc15dc0fdac76b181a7666960
-  extra-dep: true
 - location:
     git: git@github.com:packetloop/datadog.git
     commit: d7c5b246e02677596ca03bf699c490d0c4470066
@@ -18,24 +14,22 @@ packages:
     git: git@github.com:haskell-works/hw-xml.git
     commit: 18aa15f3818d67e610f592217bdf4f0192f1ee90
   extra-dep: true
-- location:
-    git: git@github.com:haskell-works/hw-hedgehog.git
-    commit: 0fd750bbbf733045027e1bc4a61f2b0df63591c7
-  extra-dep: true
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
+  - avro-0.2.0.0
   - hedgehog-0.5
   - hw-balancedparens-0.2.0.0
   - hw-bits-0.6.0.0
   - hw-conduit-0.2.0.1
   - hw-excess-0.2.0.0
+  - hw-hedgehog-0.1.0.1
   - hw-hspec-hedgehog-0.1.0.0
   - hw-int-0.0.0.1
-  - hw-kafka-avro-1.1.0
-  - hw-kafka-client-1.1.4
-  - hw-kafka-conduit-1.1.4
+  - hw-kafka-avro-1.3.0
+  - hw-kafka-client-2.2.0
+  - hw-kafka-conduit-2.0.0
   - hw-parser-0.0.0.2
   - hw-prim-0.4.0.3
   - hw-rankselect-0.10.0.1
